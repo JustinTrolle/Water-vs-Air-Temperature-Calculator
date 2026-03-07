@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>USA Triathlon — Water Temperature & Swim Modification Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #003B5C;
+    --blue: #00A3E0;
+    --red: #E4002B;
+    --dark: #1a2332;
+    --light-bg: #f0f4f7;
+    --card-bg: #ffffff;
+    --text: #2c3e50;
+    --text-light: #5a6d7e;
+    --border: #dce3ea;
+    --green: #28a745;
+    --amber: #f0ad4e;
+    --orange: #e67e22;
+    --danger: #dc3545;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Source Sans 3', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--light-bg);
+    color: var(--text);
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    background: linear-gradient(135deg, var(--navy) 0%, #00294a 100%);
+    color: white;
+    padding: 28px 24px 24px;
+    position: relative;
+    overflow: hidden;
+    text-align: center;
+  }
+  .header::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--red) 0%, var(--red) 33%, white 33%, white 66%, var(--blue) 66%, var(--blue) 100%);
+  }
+  .header-logo {
+    position: absolute;
+    top: 14px;
+    left: 16px;
+    z-index: 1;
+  }
+  .header-logo img {
+    height: 60px;
+    width: auto;
+    display: block;
+  }
+  .header-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--blue);
+    margin-bottom: 6px;
+  }
+  .header h1 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800;
+    font-size: clamp(22px, 4.5vw, 32px);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    line-height: 1.15;
+  }
+  .header p {
+    font-size: 14px;
+    color: rgba(255,255,255,0.7);
+    margin-top: 6px;
+  }
+  @media (max-width: 480px) {
+    .header-logo { position: static; margin: 0 auto 10px; }
+    .header-logo img { height: 50px; }
+  }
+
+  /* ── MAIN LAYOUT ── */
+  .container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px 16px 40px;
+  }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--card-bg);
+    border-radius: 10px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+  .card-header {
+    background: var(--navy);
+    color: white;
+    padding: 12px 18px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-header .icon {
+    font-size: 18px;
+  }
+  .card-body {
+    padding: 20px 18px;
+  }
+
+  /* ── INPUTS ── */
+  .input-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .input-group label {
+    display: block;
+    font-weight: 700;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--navy);
+    margin-bottom: 6px;
+  }
+  .input-group label small {
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--text-light);
+  }
+  .input-group input {
+    width: 100%;
+    padding: 12px 14px;
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    color: var(--navy);
+    background: #f8fafc;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    -moz-appearance: textfield;
+  }
+  .input-group input::-webkit-outer-spin-button,
+  .input-group input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  .input-group input:focus {
+    outline: none;
+    border-color: var(--blue);
+    box-shadow: 0 0 0 3px rgba(0,163,224,0.15);
+    background: white;
+  }
+
+  .unit-toggle {
+    display: flex;
+    justify-content: center;
+    gap: 0;
+    margin-bottom: 18px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 2px solid var(--navy);
+    max-width: 280px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .unit-toggle button {
+    flex: 1;
+    padding: 10px 16px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: white;
+    color: var(--navy);
+  }
+  .unit-toggle button.active {
+    background: var(--navy);
+    color: white;
+  }
+
+  /* ── RACE TYPE ── */
+  .race-type-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    margin-bottom: 0;
+  }
+  .race-type-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: #f8fafc;
+  }
+  .race-type-option:hover {
+    border-color: var(--blue);
+    background: rgba(0,163,224,0.04);
+  }
+  .race-type-option.selected {
+    border-color: var(--navy);
+    background: rgba(0,59,92,0.04);
+  }
+  .race-type-option input { display: none; }
+  .race-radio {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+  .race-type-option.selected .race-radio {
+    border-color: var(--navy);
+  }
+  .race-radio::after {
+    content: '';
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--navy);
+    transform: scale(0);
+    transition: transform 0.15s;
+  }
+  .race-type-option.selected .race-radio::after {
+    transform: scale(1);
+  }
+  .race-type-label {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text);
+  }
+  .race-type-desc {
+    font-size: 12px;
+    color: var(--text-light);
+  }
+
+  /* ── SWIM DISTANCE INPUT ── */
+  .swim-distance-group {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+  }
+  .swim-distance-group label {
+    display: block;
+    font-weight: 700;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--navy);
+    margin-bottom: 6px;
+  }
+  .swim-distance-group label small {
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--text-light);
+  }
+  .swim-distance-group input {
+    width: 100%;
+    max-width: 200px;
+    padding: 10px 14px;
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    color: var(--navy);
+    background: #f8fafc;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    -moz-appearance: textfield;
+  }
+  .swim-distance-group input::-webkit-outer-spin-button,
+  .swim-distance-group input::-webkit-inner-spin-button {
+    -webkit-appearance: none; margin: 0;
+  }
+  .swim-distance-group input:focus {
+    outline: none;
+    border-color: var(--blue);
+    box-shadow: 0 0 0 3px rgba(0,163,224,0.15);
+    background: white;
+  }
+
+  /* ── CALCULATE BUTTON ── */
+  .calc-btn {
+    display: block;
+    width: 100%;
+    padding: 14px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800;
+    font-size: 17px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: white;
+    background: linear-gradient(135deg, var(--red), #c8001f);
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    box-shadow: 0 4px 14px rgba(228,0,43,0.3);
+    margin-bottom: 16px;
+  }
+  .calc-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(228,0,43,0.4);
+  }
+  .calc-btn:active {
+    transform: translateY(0);
+  }
+
+  /* ── RESULTS ── */
+  #results { display: none; }
+  #results.show { display: block; }
+
+  .result-banner {
+    padding: 16px 18px;
+    border-radius: 10px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .result-banner .result-icon {
+    font-size: 28px;
+    flex-shrink: 0;
+    line-height: 1;
+  }
+  .result-banner .result-text h3 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800;
+    font-size: 18px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 2px;
+  }
+  .result-banner .result-text p {
+    font-size: 14px;
+    line-height: 1.4;
+  }
+
+  .banner-green { background: #e8f5e9; color: #1b5e20; }
+  .banner-green h3 { color: #1b5e20; }
+  .banner-yellow { background: #fff8e1; color: #8d6e00; }
+  .banner-yellow h3 { color: #8d6e00; }
+  .banner-orange { background: #fff3e0; color: #bf5600; }
+  .banner-orange h3 { color: #bf5600; }
+  .banner-red { background: #fce4ec; color: #b71c1c; }
+  .banner-red h3 { color: #b71c1c; }
+
+  .detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .detail-box {
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    text-align: center;
+  }
+  .detail-box .val {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800;
+    font-size: 24px;
+    color: var(--navy);
+    line-height: 1.1;
+  }
+  .detail-box .lbl {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-light);
+    margin-top: 2px;
+  }
+  .detail-box.adjusted { border-left: 3px solid var(--blue); }
+  .detail-box.adjusted .val { color: var(--blue); }
+
+  .info-note {
+    background: rgba(0,163,224,0.06);
+    border-left: 3px solid var(--blue);
+    padding: 10px 14px;
+    font-size: 13px;
+    color: var(--text);
+    border-radius: 0 6px 6px 0;
+    margin-bottom: 12px;
+    line-height: 1.5;
+  }
+  .info-note strong { color: var(--navy); }
+
+  /* ── WETSUIT SECTION ── */
+  .wetsuit-card {
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+    margin-bottom: 10px;
+  }
+  .wetsuit-card h4 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--navy);
+    margin-bottom: 8px;
+  }
+  .wetsuit-status {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.3px;
+  }
+  .ws-mandatory { background: #e3f2fd; color: #0d47a1; }
+  .ws-permitted { background: #e8f5e9; color: #1b5e20; }
+  .ws-allowed { background: #fff8e1; color: #8d6e00; }
+  .ws-prohibited { background: #fce4ec; color: #b71c1c; }
+
+  .wetsuit-note {
+    font-size: 12px;
+    color: var(--text-light);
+    margin-top: 6px;
+    line-height: 1.4;
+  }
+
+  /* ── DISCLAIMER ── */
+  .disclaimer {
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+    font-size: 12px;
+    color: var(--text-light);
+    line-height: 1.5;
+    margin-top: 16px;
+  }
+  .disclaimer strong { color: var(--text); }
+
+  /* ── PRINT ── */
+  .print-btn {
+    display: none;
+    width: 100%;
+    padding: 12px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--navy);
+    background: white;
+    border: 2px solid var(--navy);
+    border-radius: 10px;
+    cursor: pointer;
+    margin-top: 12px;
+    transition: all 0.2s;
+  }
+  .print-btn.show { display: block; }
+  .print-btn:hover { background: var(--navy); color: white; }
+
+  @media print {
+    body { background: white; }
+    .container { max-width: 100%; padding: 0; }
+    .card { box-shadow: none; border: 1px solid #ccc; break-inside: avoid; }
+    .calc-btn, .print-btn, .unit-toggle, .input-row, .race-type-grid,
+    .swim-distance-group, #inputCard { display: none !important; }
+    #results { display: block !important; }
+    .header::after { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+    .result-banner, .ws-mandatory, .ws-permitted, .ws-allowed, .ws-prohibited,
+    .card-header, .detail-box.adjusted { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 480px) {
+    .input-row { grid-template-columns: 1fr; gap: 12px; }
+    .detail-grid { grid-template-columns: 1fr; }
+    .card-body { padding: 16px 14px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-logo">
+    <img src="https://raw.githubusercontent.com/JustinTrolle/USAT-Images/69b6aab23b4b83a5a48a695384609d41462aac46/USA_Triathlon_Events_Logo_Transparent.png" alt="USA Triathlon Events Logo">
+  </div>
+  <div class="header-label">Race Director Resource</div>
+  <h1>Water Temperature &<br>Swim Modification Calculator</h1>
+  <p>Cold air adjustment, swim distance, and wetsuit guidance</p>
+</div>
+
+<div class="container">
+
+  <!-- UNIT TOGGLE -->
+  <div class="unit-toggle">
+    <button class="active" onclick="setUnit('F')" id="btnF">°F Fahrenheit</button>
+    <button onclick="setUnit('C')" id="btnC">°C Celsius</button>
+  </div>
+
+  <!-- INPUT CARD -->
+  <div class="card" id="inputCard">
+    <div class="card-header"><span class="icon">🌡️</span> Temperature Inputs</div>
+    <div class="card-body">
+      <div class="input-row">
+        <div class="input-group">
+          <label>Water Temp <small id="waterUnitLabel">(°F)</small></label>
+          <input type="number" id="waterTemp" step="0.1" placeholder="e.g. 68" oninput="calculate()">
+        </div>
+        <div class="input-group">
+          <label>Air Temp <small id="airUnitLabel">(°F)</small></label>
+          <input type="number" id="airTemp" step="0.1" placeholder="e.g. 54" oninput="calculate()">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RACE TYPE CARD -->
+  <div class="card" id="raceTypeCard">
+    <div class="card-header"><span class="icon">🏊</span> Race Category</div>
+    <div class="card-body">
+      <div class="race-type-grid">
+        <label class="race-type-option selected" onclick="selectRace('age_group')">
+          <input type="radio" name="raceType" value="age_group" checked>
+          <div class="race-radio"></div>
+          <div>
+            <div class="race-type-label">Age Group / All Other Races</div>
+            <div class="race-type-desc">Standard community races and age-group competitions</div>
+          </div>
+        </label>
+        <label class="race-type-option" onclick="selectRace('national')">
+          <input type="radio" name="raceType" value="national">
+          <div>
+            <div class="race-radio"></div>
+          </div>
+          <div>
+            <div class="race-type-label">National Championship / World Qualifier</div>
+            <div class="race-type-desc">USAT National Championship & World Triathlon qualifying AG races</div>
+          </div>
+        </label>
+        <label class="race-type-option" onclick="selectRace('elite')">
+          <input type="radio" name="raceType" value="elite">
+          <div>
+            <div class="race-radio"></div>
+          </div>
+          <div>
+            <div class="race-type-label">Elite / U23 / Dev High Performance</div>
+            <div class="race-type-desc">Elite, Under-23, and Developmental High Performance races</div>
+          </div>
+        </label>
+      </div>
+
+      <div class="swim-distance-group" id="swimDistGroup">
+        <label>Planned Swim Distance <small>(meters)</small></label>
+        <input type="number" id="swimDist" step="1" placeholder="e.g. 1500" value="1500" oninput="calculate()">
+      </div>
+    </div>
+  </div>
+
+  <!-- CALCULATE -->
+  <button class="calc-btn" onclick="calculate()">Calculate Results</button>
+
+  <!-- RESULTS -->
+  <div id="results">
+    <div class="card">
+      <div class="card-header"><span class="icon">📊</span> Temperature Analysis</div>
+      <div class="card-body">
+        <div class="detail-grid" id="tempDetails"></div>
+        <div id="adjustmentNote"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="icon">🏁</span> Swim Decision</div>
+      <div class="card-body" id="swimDecision"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="icon">🩱</span> Wetsuit Status</div>
+      <div class="card-body" id="wetsuitStatus"></div>
+    </div>
+
+    <button class="print-btn show" onclick="window.print()">🖨️ Print Results</button>
+  </div>
+
+  <div class="disclaimer">
+    <strong>Disclaimer:</strong> This calculator implements USAT guidelines from the Weather Action Planning Resource Guide. All planning and decision-making is at the discretion of the local Race Director, medical specialists, and weather experts. This tool is not a replacement for the Official Multisport Competition Rules. For questions, contact <strong>rulesandofficials@usatriathlon.org</strong>.
+  </div>
+
+</div>
+
+<script>
+let currentUnit = 'F';
+let currentRace = 'age_group';
+
+function setUnit(u) {
+  currentUnit = u;
+  document.getElementById('btnF').classList.toggle('active', u === 'F');
+  document.getElementById('btnC').classList.toggle('active', u === 'C');
+  const label = u === 'F' ? '(°F)' : '(°C)';
+  document.getElementById('waterUnitLabel').textContent = label;
+  document.getElementById('airUnitLabel').textContent = label;
+  calculate();
+}
+
+function selectRace(type) {
+  currentRace = type;
+  document.querySelectorAll('.race-type-option').forEach(el => el.classList.remove('selected'));
+  event.currentTarget.classList.add('selected');
+  calculate();
+}
+
+function toF(val) { return currentUnit === 'C' ? val * 9/5 + 32 : val; }
+function toC(val) { return currentUnit === 'C' ? val : (val - 32) * 5/9; }
+function fmt(val, unit) {
+  if (unit === 'F') return val.toFixed(1) + '°F';
+  return toC(val).toFixed(1) + '°C';
+}
+function fmtBoth(valF) {
+  return valF.toFixed(1) + '°F / ' + ((valF - 32)*5/9).toFixed(1) + '°C';
+}
+
+function calculate() {
+  const waterRaw = parseFloat(document.getElementById('waterTemp').value);
+  const airRaw = parseFloat(document.getElementById('airTemp').value);
+  const swimDist = parseInt(document.getElementById('swimDist').value) || 1500;
+
+  if (isNaN(waterRaw) || isNaN(airRaw)) {
+    document.getElementById('results').classList.remove('show');
+    return;
+  }
+
+  // Convert to Fahrenheit for all calculations
+  const waterF = toF(waterRaw);
+  const airF = toF(airRaw);
+
+  // Determine if cold air adjustment applies
+  const needsAdjustment = waterF < 71.6 && airF < 59;
+  let adjustedF = waterF;
+  if (needsAdjustment) {
+    adjustedF = (waterF + airF) / 2;
+  }
+
+  // ── TEMPERATURE DETAILS ──
+  let tempHTML = `
+    <div class="detail-box">
+      <div class="val">${fmtBoth(waterF)}</div>
+      <div class="lbl">Measured Water Temp</div>
+    </div>
+    <div class="detail-box">
+      <div class="val">${fmtBoth(airF)}</div>
+      <div class="lbl">Measured Air Temp</div>
+    </div>
+  `;
+  if (needsAdjustment) {
+    tempHTML += `
+      <div class="detail-box adjusted" style="grid-column: 1 / -1;">
+        <div class="val">${fmtBoth(adjustedF)}</div>
+        <div class="lbl">Adjusted Water Temp (Cold Air Compound Risk)</div>
+      </div>
+    `;
+  }
+  document.getElementById('tempDetails').innerHTML = tempHTML;
+
+  let adjNote = '';
+  if (needsAdjustment) {
+    adjNote = `<div class="info-note"><strong>Cold Air Adjustment Applied:</strong> Water temp is below 71.6°F and air temp is below 59°F. Adjusted water temp = (${waterF.toFixed(1)} + ${airF.toFixed(1)}) ÷ 2 = <strong>${adjustedF.toFixed(1)}°F</strong></div>`;
+  } else if (waterF < 71.6) {
+    adjNote = `<div class="info-note">Water temp is below 71.6°F but air temp is 59°F or above — no cold air adjustment needed. Using measured water temp.</div>`;
+  } else {
+    adjNote = `<div class="info-note">Water temp is 71.6°F or above — no cold air adjustment needed. Using measured water temp.</div>`;
+  }
+  document.getElementById('adjustmentNote').innerHTML = adjNote;
+
+  // ── SWIM DECISION ──
+  let swimHTML = '';
+
+  // Cancellation checks
+  let cancelReason = null;
+  if (airF < 42.8) {
+    cancelReason = `Air temperature (${fmtBoth(airF)}) is below 42.8°F / 6.0°C.`;
+  } else if (adjustedF < 53.6) {
+    cancelReason = `Adjusted water temperature (${fmtBoth(adjustedF)}) is below 53.6°F / 12.0°C.`;
+  } else if (waterF >= 89.6) {
+    cancelReason = `Measured water temperature (${fmtBoth(waterF)}) is at or above 89.6°F / 32.0°C.`;
+  }
+
+  if (cancelReason) {
+    swimHTML = `
+      <div class="result-banner banner-red">
+        <div class="result-icon">🚫</div>
+        <div class="result-text">
+          <h3>Cancel Swim</h3>
+          <p>${cancelReason} USAT recommends canceling the swim portion.</p>
+        </div>
+      </div>
+    `;
+  } else {
+    // Determine max distance
+    let maxDist = Infinity;
+    let distLabel = 'Original Distance';
+    let bannerClass = 'banner-green';
+    let bannerIcon = '✅';
+
+    if (adjustedF >= 59.0 && adjustedF <= 87.7) {
+      maxDist = Infinity;
+      distLabel = 'Maintain Original Distance';
+    } else if (adjustedF >= 57.2 && adjustedF < 59.0) {
+      maxDist = 3000;
+      distLabel = 'Maximum 3,000m';
+      bannerClass = 'banner-yellow';
+      bannerIcon = '⚠️';
+    } else if (adjustedF >= 55.4 && adjustedF < 57.2) {
+      maxDist = 1500;
+      distLabel = 'Maximum 1,500m';
+      bannerClass = 'banner-orange';
+      bannerIcon = '⚠️';
+    } else if ((adjustedF >= 53.6 && adjustedF < 55.4) || (adjustedF > 87.7 && adjustedF < 89.6)) {
+      maxDist = 750;
+      distLabel = 'Maximum 750m';
+      bannerClass = 'banner-orange';
+      bannerIcon = '⚠️';
+    }
+
+    // High water temp ranges (87.8-89.5)
+    if (waterF >= 87.8 && waterF < 89.6 && !needsAdjustment) {
+      maxDist = 750;
+      distLabel = 'Maximum 750m';
+      bannerClass = 'banner-orange';
+      bannerIcon = '⚠️';
+    }
+
+    const needsShorten = maxDist !== Infinity && swimDist > maxDist;
+
+    if (maxDist === Infinity) {
+      swimHTML = `
+        <div class="result-banner banner-green">
+          <div class="result-icon">✅</div>
+          <div class="result-text">
+            <h3>Maintain Original Distance</h3>
+            <p>Adjusted water temperature (${fmtBoth(adjustedF)}) is within 59.0–87.7°F. The ${swimDist}m swim can proceed at full distance.</p>
+          </div>
+        </div>
+      `;
+    } else if (needsShorten) {
+      swimHTML = `
+        <div class="result-banner ${bannerClass}">
+          <div class="result-icon">${bannerIcon}</div>
+          <div class="result-text">
+            <h3>Shorten Swim — ${distLabel}</h3>
+            <p>Your planned ${swimDist}m swim exceeds the ${maxDist}m maximum for an adjusted water temp of ${fmtBoth(adjustedF)}. Shorten the swim to no greater than ${maxDist}m.</p>
+          </div>
+        </div>
+      `;
+    } else {
+      swimHTML = `
+        <div class="result-banner banner-green">
+          <div class="result-icon">✅</div>
+          <div class="result-text">
+            <h3>Swim Can Proceed — ${swimDist}m</h3>
+            <p>Your ${swimDist}m swim is within the ${distLabel.toLowerCase()} allowed for an adjusted water temp of ${fmtBoth(adjustedF)}.</p>
+          </div>
+        </div>
+      `;
+    }
+  }
+
+  document.getElementById('swimDecision').innerHTML = swimHTML;
+
+  // ── WETSUIT STATUS ──
+  // Use MEASURED water temp for wetsuit decisions (per USAT rules)
+  let wetHTML = '';
+
+  if (currentRace === 'elite') {
+    const isShort = swimDist <= 1500;
+    const prohibitTemp = isShort ? 68.0 : 71.6;
+    const mandatoryTemp = 60.6;
+
+    let status, cls, note;
+    if (waterF >= prohibitTemp) {
+      status = 'Prohibited'; cls = 'ws-prohibited';
+      note = `Water temp is at or above ${fmtBoth(prohibitTemp)}. Wetsuits are not permitted.`;
+    } else if (waterF <= mandatoryTemp) {
+      status = 'Mandatory'; cls = 'ws-mandatory';
+      note = `Water temp is at or below ${fmtBoth(mandatoryTemp)}. Wetsuits must cover torso and back.`;
+    } else {
+      status = 'Permitted'; cls = 'ws-permitted';
+      note = `Water temp is between ${fmtBoth(mandatoryTemp)} and ${fmtBoth(prohibitTemp)}. Wetsuits are permitted.`;
+    }
+
+    wetHTML = `
+      <div class="wetsuit-card">
+        <h4>Elite / U23 / Dev High Performance — ${isShort ? '1500m & Shorter' : 'Longer Than 1500m'}</h4>
+        <span class="wetsuit-status ${cls}">${status}</span>
+        <div class="wetsuit-note">${note}</div>
+      </div>
+    `;
+  } else if (currentRace === 'national') {
+    const prohibitTemp = 76.2;
+    const mandatoryTemp = 60.6;
+
+    let status, cls, note;
+    if (waterF >= prohibitTemp) {
+      status = 'Prohibited'; cls = 'ws-prohibited';
+      note = `Water temp is at or above ${fmtBoth(prohibitTemp)}. Wetsuits are not permitted.`;
+    } else if (waterF <= mandatoryTemp) {
+      status = 'Mandatory'; cls = 'ws-mandatory';
+      note = `Water temp is at or below ${fmtBoth(mandatoryTemp)}. Wetsuits must cover torso and back.`;
+    } else {
+      status = 'Permitted'; cls = 'ws-permitted';
+      note = `Water temp is between ${fmtBoth(mandatoryTemp)} and ${fmtBoth(prohibitTemp)}. Wetsuits are permitted.`;
+    }
+
+    wetHTML = `
+      <div class="wetsuit-card">
+        <h4>National Championship / World Triathlon Qualifying</h4>
+        <span class="wetsuit-status ${cls}">${status}</span>
+        <div class="wetsuit-note">${note}</div>
+      </div>
+    `;
+  } else {
+    // Age Group / All Other
+    let status, cls, note;
+    if (waterF >= 84.0) {
+      status = 'Prohibited'; cls = 'ws-prohibited';
+      note = `Water temp is at or above 84.0°F (28.9°C). Wetsuits are not permitted for any wave.`;
+    } else if (waterF >= 78.1) {
+      status = 'Allowed — Non-Competitive Only'; cls = 'ws-allowed';
+      note = `Water temp is 78.1–84.0°F (25.6–28.9°C). Wetsuits are only allowed in non-competitive races/waves. Athletes wearing wetsuits are not eligible for rankings or age-group awards.`;
+    } else if (waterF >= 60.7) {
+      status = 'Permitted'; cls = 'ws-permitted';
+      note = `Water temp is 60.7–78.0°F (16.0–25.5°C). Wetsuits are permitted for all athletes.`;
+    } else {
+      status = 'Mandatory'; cls = 'ws-mandatory';
+      note = `Water temp is at or below 60.6°F (15.9°C). Wetsuits are mandatory and must cover the torso and back.`;
+    }
+
+    wetHTML = `
+      <div class="wetsuit-card">
+        <h4>Age Group / All Other Races</h4>
+        <span class="wetsuit-status ${cls}">${status}</span>
+        <div class="wetsuit-note">${note}</div>
+      </div>
+    `;
+
+    // Also show the 78°F note about competitive eligibility
+    if (waterF >= 78.0 && waterF < 84.0) {
+      wetHTML += `
+        <div class="info-note" style="margin-top: 10px;">
+          <strong>Non-Competitive Wetsuit Wave:</strong> Athletes who choose to wear wetsuits must start in a separate non-competitive wave (positioned as the last wave). Their results will not be submitted for rankings or age-group awards.
+        </div>
+      `;
+    }
+  }
+
+  // Race suit guidance
+  let suitNote = '';
+  if (waterF < 78.1 || cancelReason) {
+    suitNote = `<div class="wetsuit-note" style="margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border);"><strong>Race Suit Note:</strong> When the swim is wetsuit legal, race suits may extend to the wrists and ankles. When wetsuits are not legal, race suits cannot extend below the elbows or cover any part of the legs below the knees.</div>`;
+  } else {
+    suitNote = `<div class="wetsuit-note" style="margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border);"><strong>Race Suit Note:</strong> Swim is not wetsuit legal — race suits cannot extend below the elbows or cover the legs below the knees.</div>`;
+  }
+  wetHTML += suitNote;
+
+  document.getElementById('wetsuitStatus').innerHTML = wetHTML;
+
+  // Show results
+  document.getElementById('results').classList.add('show');
+}
+</script>
+
+</body>
+</html>
