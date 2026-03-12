@@ -693,9 +693,9 @@ function calculate() {
   if (needsAdjustment) {
     adjNote = `<div class="info-note"><strong>Cold Air Adjustment Applied:</strong> Water temp is below 71.6°F and air temp is below 59°F. Adjusted water temp = (${waterF.toFixed(1)} + ${airF.toFixed(1)}) ÷ 2 = <strong>${adjustedF.toFixed(1)}°F</strong></div>`;
   } else if (waterF < 71.6) {
-    adjNote = `<div class="info-note">Water temp is below 71.6°F but air temp is 59°F or above — no cold air adjustment needed. Using measured water temp.</div>`;
+    adjNote = `<div class="info-note">Water temp is at 71.6°F or below and air temp is 59°F or below — then cold air adjustment is needed.</div>`;
   } else {
-    adjNote = `<div class="info-note">Water temp is 71.6°F or above — no cold air adjustment needed. Using measured water temp.</div>`;
+    adjNote = `<div class="info-note">Water temp is at 71.6°F or below and air temp is 59°F or below — then cold air adjustment is needed</div>`;
   }
   document.getElementById('adjustmentNote').innerHTML = adjNote;
 
