@@ -661,8 +661,13 @@ function calculate() {
   const waterF = toF(waterRaw);
   const airF = toF(airRaw);
 
-  // Determine if cold air adjustment applies
-  const needsAdjustment = waterF < 71.6 && airF < 59;
+  // ══════════════════════════════════════════════════════════
+  // FIX #1: Cold Air Adjustment — use <= instead of <
+  // The USAT table on page 14 includes boundary values
+  // (Water=71.6, Air=59 shows adjusted value of 65.3),
+  // so adjustment applies AT these thresholds, not just below.
+  // ══════════════════════════════════════════════════════════
+  const needsAdjustment = waterF <= 71.6 && airF <= 59;
   let adjustedF = waterF;
   if (needsAdjustment) {
     adjustedF = (waterF + airF) / 2;
@@ -689,20 +694,28 @@ function calculate() {
   }
   document.getElementById('tempDetails').innerHTML = tempHTML;
 
+  // ══════════════════════════════════════════════════════════
+  // FIX #3: Info note — show contextually appropriate messages
+  // instead of the same generic cold-adjustment text for all cases.
+  // ══════════════════════════════════════════════════════════
   let adjNote = '';
   if (needsAdjustment) {
-    adjNote = `<div class="info-note"><strong>Cold Air Adjustment Applied:</strong> Water temp is below 71.6°F and air temp is below 59°F. Adjusted water temp = (${waterF.toFixed(1)} + ${airF.toFixed(1)}) ÷ 2 = <strong>${adjustedF.toFixed(1)}°F</strong></div>`;
-  } else if (waterF < 71.6) {
-    adjNote = `<div class="info-note">Water temp is at 71.6°F or below and air temp is 59°F or below — then cold air adjustment is needed.</div>`;
+    adjNote = `<div class="info-note"><strong>Cold Air Adjustment Applied:</strong> Water temp is ≤ 71.6°F and air temp is ≤ 59°F. Adjusted water temp = (${waterF.toFixed(1)} + ${airF.toFixed(1)}) ÷ 2 = <strong>${adjustedF.toFixed(1)}°F</strong>. This adjusted value is used for swim distance decisions.</div>`;
+  } else if (waterF <= 71.6 && airF > 59) {
+    adjNote = `<div class="info-note"><strong>No Cold Air Adjustment Needed:</strong> Water temp is ≤ 71.6°F, but air temp (${airF.toFixed(1)}°F) is above 59°F. Cold air compound risk does not apply — the measured water temperature is used for swim distance decisions.</div>`;
+  } else if (waterF > 71.6 && waterF < 80) {
+    adjNote = `<div class="info-note"><strong>No Cold Air Adjustment Needed:</strong> Water temp is above 71.6°F. Cold air adjustment only applies when both water temp ≤ 71.6°F and air temp ≤ 59°F.</div>`;
+  } else if (waterF >= 80) {
+    adjNote = `<div class="info-note"><strong>Warm Water Conditions:</strong> Water temp is ${fmtBoth(waterF)}. Monitor for high-water-temperature swim restrictions and wetsuit prohibitions.</div>`;
   } else {
-    adjNote = `<div class="info-note">Water temp is at 71.6°F or below and air temp is 59°F or below — then cold air adjustment is needed</div>`;
+    adjNote = `<div class="info-note"><strong>No Cold Air Adjustment Needed:</strong> Cold air adjustment only applies when both water temp ≤ 71.6°F and air temp ≤ 59°F.</div>`;
   }
   document.getElementById('adjustmentNote').innerHTML = adjNote;
 
   // ── SWIM DECISION ──
   let swimHTML = '';
 
-  // Cancellation checks
+  // Cancellation checks (per USAT Swim Distance Modification Guide, page 14)
   let cancelReason = null;
   if (airF < 42.8) {
     cancelReason = `Air temperature (${fmtBoth(airF)}) is below 42.8°F / 6.0°C.`;
@@ -723,34 +736,37 @@ function calculate() {
       </div>
     `;
   } else {
-    // Determine max distance
+    // Determine max distance based on adjusted water temp
+    // Thresholds from USAT Swim Distance Modification Guide (page 14)
     let maxDist = Infinity;
     let distLabel = 'Original Distance';
     let bannerClass = 'banner-green';
     let bannerIcon = '✅';
 
     if (adjustedF >= 59.0 && adjustedF <= 87.7) {
+      // 15.0-30.9°C → maintain original distance
       maxDist = Infinity;
       distLabel = 'Maintain Original Distance';
     } else if (adjustedF >= 57.2 && adjustedF < 59.0) {
+      // 14.0-14.9°C → max 3000m
       maxDist = 3000;
       distLabel = 'Maximum 3,000m';
       bannerClass = 'banner-yellow';
       bannerIcon = '⚠️';
     } else if (adjustedF >= 55.4 && adjustedF < 57.2) {
+      // 13.0-13.9°C → max 1500m
       maxDist = 1500;
       distLabel = 'Maximum 1,500m';
       bannerClass = 'banner-orange';
       bannerIcon = '⚠️';
-    } else if ((adjustedF >= 53.6 && adjustedF < 55.4) || (adjustedF > 87.7 && adjustedF < 89.6)) {
+    } else if (adjustedF >= 53.6 && adjustedF < 55.4) {
+      // 12.0-12.9°C → max 750m (cold side)
       maxDist = 750;
       distLabel = 'Maximum 750m';
       bannerClass = 'banner-orange';
       bannerIcon = '⚠️';
-    }
-
-    // High water temp ranges (87.8-89.5)
-    if (waterF >= 87.8 && waterF < 89.6 && !needsAdjustment) {
+    } else if (adjustedF > 87.7 && adjustedF < 89.6) {
+      // 31.0-31.9°C → max 750m (hot side)
       maxDist = 750;
       distLabel = 'Maximum 750m';
       bannerClass = 'banner-orange';
@@ -765,7 +781,7 @@ function calculate() {
           <div class="result-icon">✅</div>
           <div class="result-text">
             <h3>Maintain Original Distance</h3>
-            <p>Adjusted water temperature (${fmtBoth(adjustedF)}) is within 59.0–87.7°F. The ${swimDist}m swim can proceed at full distance.</p>
+            <p>${needsAdjustment ? 'Adjusted' : 'Measured'} water temperature (${fmtBoth(adjustedF)}) is within 59.0–87.7°F (15.0–30.9°C). The ${swimDist}m swim can proceed at full distance.</p>
           </div>
         </div>
       `;
@@ -775,7 +791,7 @@ function calculate() {
           <div class="result-icon">${bannerIcon}</div>
           <div class="result-text">
             <h3>Shorten Swim — ${distLabel}</h3>
-            <p>Your planned ${swimDist}m swim exceeds the ${maxDist}m maximum for an adjusted water temp of ${fmtBoth(adjustedF)}. Shorten the swim to no greater than ${maxDist}m.</p>
+            <p>Your planned ${swimDist}m swim exceeds the ${maxDist}m maximum for ${needsAdjustment ? 'an adjusted' : 'a measured'} water temp of ${fmtBoth(adjustedF)}. Shorten the swim to no greater than ${maxDist}m.</p>
           </div>
         </div>
       `;
@@ -785,7 +801,7 @@ function calculate() {
           <div class="result-icon">✅</div>
           <div class="result-text">
             <h3>Swim Can Proceed — ${swimDist}m</h3>
-            <p>Your ${swimDist}m swim is within the ${distLabel.toLowerCase()} allowed for an adjusted water temp of ${fmtBoth(adjustedF)}.</p>
+            <p>Your ${swimDist}m swim is within the ${distLabel.toLowerCase()} allowed for ${needsAdjustment ? 'an adjusted' : 'a measured'} water temp of ${fmtBoth(adjustedF)}.</p>
           </div>
         </div>
       `;
@@ -795,7 +811,7 @@ function calculate() {
   document.getElementById('swimDecision').innerHTML = swimHTML;
 
   // ── WETSUIT STATUS ──
-  // Use MEASURED water temp for wetsuit decisions (per USAT rules)
+  // Uses MEASURED water temp for wetsuit decisions (per USAT rules, page 15)
   let wetHTML = '';
 
   if (currentRace === 'elite') {
@@ -870,8 +886,11 @@ function calculate() {
       </div>
     `;
 
-    // Also show the 78°F note about competitive eligibility
-    if (waterF >= 78.0 && waterF < 84.0) {
+    // ══════════════════════════════════════════════════════════
+    // FIX #2: Non-competitive wetsuit wave note
+    // Page 17 says "78.1F-83.9F" — use >= 78.1, not >= 78.0
+    // ══════════════════════════════════════════════════════════
+    if (waterF >= 78.1 && waterF < 84.0) {
       wetHTML += `
         <div class="info-note" style="margin-top: 10px;">
           <strong>Non-Competitive Wetsuit Wave:</strong> Athletes who choose to wear wetsuits must start in a separate non-competitive wave (positioned as the last wave). Their results will not be submitted for rankings or age-group awards.
@@ -882,7 +901,9 @@ function calculate() {
 
   // Race suit guidance
   let suitNote = '';
-  if (waterF < 78.1 || cancelReason) {
+  if (cancelReason) {
+    suitNote = `<div class="wetsuit-note" style="margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border);"><strong>Race Suit Note:</strong> Swim has been cancelled — race suit restrictions do not apply.</div>`;
+  } else if (waterF < 78.1) {
     suitNote = `<div class="wetsuit-note" style="margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border);"><strong>Race Suit Note:</strong> When the swim is wetsuit legal, race suits may extend to the wrists and ankles. When wetsuits are not legal, race suits cannot extend below the elbows or cover any part of the legs below the knees.</div>`;
   } else {
     suitNote = `<div class="wetsuit-note" style="margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border);"><strong>Race Suit Note:</strong> Swim is not wetsuit legal — race suits cannot extend below the elbows or cover the legs below the knees.</div>`;
